@@ -6,4 +6,5 @@ import java.util.Optional;
 
 public interface testlogrepository extends JpaRepository<testlog, Long> {
     Optional<testlog> findByTestLogId(String testLogId);
+    List<TestLog> findByDeviceIdOrderByTimestampDesc(Long deviceId);
 }

@@ -11,46 +11,47 @@ import java.util.List;
 import java.util.Optional;
 import java.time.LocalDateTime;
 
-
 @Service
-public class deviceservice {
-    private final devicerepository devicerepository;
-    private final testlogrepository testlogrepository;
-    private final pingservice pingservice;
+public class DeviceService{
+    private final devicerepository deviceRepository;
+    private final testlogrepository testLogRepository;
+    private final pingservice pingService;
 
-
-    public deviceservice(devicerepository devicerepository, testlogrepository testlogrepository, pingservice pingservice) {
-        this.devicerepository = devicerepository;
-        this.testlogrepository = testlogrepository;
-        this.pingservice = pingservice;
+    public DeviceService(devicerepository deviceRepository, testlogrepository testLogRepository, pingservice pingService) {
+        this.deviceRepository = deviceRepository;
+        this.testLogRepository = testLogRepository;
+        this.pingService = pingService;
     }
 
-    public device createDevice(device device) {
-        Optional<device> existingDevice = devicerepository.findByIpAdress(device.getIp_adress());
-        if (existingDevice.isPresent()) {
-            throw new IllegalArgumentException("Device with IP address " + device.getIp_adress() + " already exists.");
+    public device createDevice(device newDevice) {
+        Optional<device> exists = deviceRepository.findByIpAddress(newDevice.getIpAddress());
+        if (exists.isPresent()) {
+            throw new IllegalArgumentException("Já existe um dispositivo com este endereço IP.");
         }
-        device.setCreated_at(LocalDateTime.now());
-        return devicerepository.save(device);
+        newDevice.setCreated_at(LocalDateTime.now());
+        return deviceRepository.save(newDevice);
     }
 
-    
-public List<device> listDevices(boolean refreshStatus){
-        List<device> devices = devicerepository.findAll();
-        if (refreshStatus) {
-            for (device d : devices){
-                try{
-                    var res = pingservice.pingDevice(d.getIp_adress(), 3000);
-                    d.setCreated_at(LocalDateTime.now());
-                    devicerepository.save(d);
-                } catch (Exception ex){
-                    d.setCreated_at(LocalDateTime.now());
-                    devicerepository.save(d);
-            }
+    public List<device> listDevices(boolean refreshStatus) {
+        List<device> devices = deviceRepository.findAll();
+        return devices;
         }
-        devices = devicerepository.findAll();
-    }
-    return devices;
-}
 
+        @Transactional
+        public testlog runTest(Long deviceId){
+            device device = deviceRepository.findByID(deviceId).orElseThrow(() -> new IllegalArgumentException("Dispositivo não encontrado."));
+
+            var res = pingService.pingDevice(device.getIpAddress(), 3000);
+
+            testlog log = new testlog();
+            log.setDevice_id(device.getId());
+            log.setTimestamp(LocalDateTime.now());
+            log.setLatency(res.getLatency());
+            log.setStatus(res.isReachable() ? com.example.back_end.enums.status.REACHABLE : com.example.back_end.enums.status.UNREACHABLE);
+
+            return log;
+        }
+        public List<testLog> getLogs(Long deviceId) {
+            return testLogRepository.findByDeviceIdOrderByTimestampDesc(deviceId);
+        }
 }

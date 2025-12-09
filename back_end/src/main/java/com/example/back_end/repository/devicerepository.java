@@ -6,4 +6,6 @@ import java.util.Optional;
 
 public interface devicerepository extends JpaRepository<device, Long> {
     Optional<device> findByIpAdress(String deviceIP);
+    Optional<device> findByID(String deviceID);
 }
+
