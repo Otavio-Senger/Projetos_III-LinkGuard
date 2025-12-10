@@ -17,7 +17,14 @@ public class testcontroller {
 
         @PostMapping("/device/{id}")
         public ResponseEntity<?> runTest(@PathVariable Long id){
-            
+            try {
+                testlog log = deviceservice.runTest(id);
+                return ResponseEntity.ok(log);
+            }catch (IllegalArgumentException ex) {
+                return ResponseEntity.badRequest().body(ex.getMessage());
+            }catch (Exception ex){
+                return ResponseEntity.status(500).body("Erro: " + ex.getMessage());
+            }
         }
     }
 }
